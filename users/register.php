@@ -11,15 +11,19 @@ if (isLoggedIn()) {
 $error = '';
 $success = '';
 
+// Get available roles for registration (exclude administrator)
+$availableRoles = queryData('roles', '*', ['name' => 'neq.administrator'], 'name.asc');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = sanitizeInput($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirmPassword = $_POST['confirm_password'] ?? '';
     $firstName = sanitizeInput($_POST['first_name'] ?? '');
     $lastName = sanitizeInput($_POST['last_name'] ?? '');
+    $roleId = intval($_POST['role_id'] ?? 0);
     
-    if (empty($email) || empty($password) || empty($confirmPassword) || empty($firstName) || empty($lastName)) {
-        $error = 'Please fill in all fields.';
+    if (empty($email) || empty($password) || empty($confirmPassword) || empty($firstName) || empty($lastName) || $roleId === 0) {
+        $error = 'Please fill in all fields and select a role.';
     } elseif ($password !== $confirmPassword) {
         $error = 'Passwords do not match.';
     } elseif (strlen($password) < 8) {
@@ -33,16 +37,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $authData = registerUser($email, $password, $userData);
         
         if ($authData && isset($authData['id'])) {
-            // Assign default role (team_member) to new user
-            $roles = queryData('roles', '*', ['name' => 'eq.team_member']);
-            
-            if ($roles && count($roles) > 0) {
-                assignRoleToUser($authData['id'], $roles[0]['id']);
-            }
+            // Assign selected role to new user
+            assignRoleToUser($authData['id'], $roleId);
             
             $success = 'Registration successful! You can now login.';
         } else {
-            $error = 'Registration failed. Email may already be in use.';
+            if (isset($authData['error']) && $authData['error'] === 'email_exists') {
+                $error = 'This email is already registered. Please use a different email.';
+            } else {
+                $error = 'Registration failed. Please try again later.';
+            }
         }
     }
 }
@@ -111,7 +115,7 @@ include_once __DIR__ . '/../includes/header.php';
                         <div class="form-text small">Password must be at least 8 characters long.</div>
                     </div>
                     
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label for="confirm_password" class="form-label">Confirm Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0">
@@ -119,6 +123,22 @@ include_once __DIR__ . '/../includes/header.php';
                             </span>
                             <input type="password" class="form-control border-start-0" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
                         </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="role_id" class="form-label">Select Your Role</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-user-tag text-muted"></i>
+                            </span>
+                            <select class="form-select border-start-0" id="role_id" name="role_id" required>
+                                <option value="">Select a role</option>
+                                <?php foreach ($availableRoles as $role): ?>
+                                    <option value="<?php echo $role['id']; ?>"><?php echo htmlspecialchars($role['name']); ?> - <?php echo htmlspecialchars($role['description']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-text small">Choose the role that best describes your position.</div>
                     </div>
                     
                     <div class="d-grid gap-2 mb-4">
