@@ -137,7 +137,9 @@ include_once __DIR__ . '/includes/header.php';  // Changed from header_public.ph
 .text-gradient {
     background: linear-gradient(45deg, #4e73df, #36b9cc);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent; /* Fallback for browsers that don't support -webkit-text-fill-color */
 }
 
 .feature-icon {
