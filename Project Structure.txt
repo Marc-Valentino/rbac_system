@@ -1,0 +1,39 @@
+rbac_system/
+├── assets/
+│   ├── css/
+│   │   └── styles.css
+│   └── js/
+│       └── scripts.js
+├── config/
+│   └── database.php
+├── includes/
+│   ├── auth.php
+│   ├── functions.php
+│   └── header.php
+├── pages/
+│   ├── admin/
+│   │   ├── dashboard.php
+│   │   ├── manage_roles.php
+│   │   └── manage_users.php
+│   ├── client/
+│   │   └── dashboard.php
+│   ├── manager/
+│   │   └── dashboard.php
+│   ├── team_leader/
+│   │   └── dashboard.php
+│   └── team_member/
+│       └── dashboard.php
+├── tasks/
+│   ├── create.php
+│   ├── delete.php
+│   ├── edit.php
+│   ├── index.php
+│   └── view.php
+├── users/
+│   ├── login.php
+│   ├── logout.php
+│   ├── profile.php
+│   └── register.php
+├── .gitignore
+├── index.php
+└── README.md
