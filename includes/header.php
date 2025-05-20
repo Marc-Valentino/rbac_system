@@ -11,34 +11,57 @@ $roleNames = array_map(function($role) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Management System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>RBAC System</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="/rbac_system/assets/css/style.css">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="/rbac_system/index.php">Task Management System</a>
+            <a class="navbar-brand" href="/rbac_system/index.php">
+                <i class="fas fa-shield-alt me-2"></i>RBAC System
+            </a>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav ms-auto">
                     <?php if (isLoggedIn()): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/rbac_system/index.php">Dashboard</a>
+                            <a class="nav-link" href="/rbac_system/index.php">
+                                <i class="fas fa-home me-1"></i> Dashboard
+                            </a>
                         </li>
                         
                         <?php if (hasRole('administrator')): ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                                Admin
+                                <i class="fas fa-user-shield me-1"></i> Admin
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/rbac_system/pages/admin/dashboard.php">Admin Dashboard</a></li>
-                                <li><a class="dropdown-item" href="/rbac_system/pages/admin/manage_users.php">Manage Users</a></li>
-                                <li><a class="dropdown-item" href="/rbac_system/pages/admin/manage_roles.php">Manage Roles</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/rbac_system/pages/admin/dashboard.php">
+                                    <i class="fas fa-tachometer-alt me-2"></i> Admin Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="/rbac_system/pages/admin/manage_users.php">
+                                    <i class="fas fa-users me-2"></i> Manage Users
+                                </a></li>
+                                <li><a class="dropdown-item" href="/rbac_system/pages/admin/manage_roles.php">
+                                    <i class="fas fa-user-tag me-2"></i> Manage Roles
+                                </a></li>
                             </ul>
                         </li>
                         <?php endif; ?>
@@ -46,12 +69,16 @@ $roleNames = array_map(function($role) {
                         <?php if (hasAnyRole(['project_manager', 'team_leader', 'team_member'])): ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="tasksDropdown" role="button" data-bs-toggle="dropdown">
-                                Tasks
+                                <i class="fas fa-tasks me-1"></i> Tasks
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/rbac_system/tasks/index.php">All Tasks</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/rbac_system/tasks/index.php">
+                                    <i class="fas fa-list me-2"></i> All Tasks
+                                </a></li>
                                 <?php if (hasAnyRole(['project_manager', 'team_leader'])): ?>
-                                <li><a class="dropdown-item" href="/rbac_system/tasks/create.php">Create Task</a></li>
+                                <li><a class="dropdown-item" href="/rbac_system/tasks/create.php">
+                                    <i class="fas fa-plus me-2"></i> Create Task
+                                </a></li>
                                 <?php endif; ?>
                             </ul>
                         </li>
@@ -59,48 +86,49 @@ $roleNames = array_map(function($role) {
                         
                         <?php if (hasRole('project_manager')): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/rbac_system/pages/manager/dashboard.php">Manager Dashboard</a>
+                            <a class="nav-link" href="/rbac_system/pages/manager/dashboard.php">
+                                <i class="fas fa-project-diagram me-1"></i> Manager Dashboard
+                            </a>
                         </li>
                         <?php endif; ?>
                         
                         <?php if (hasRole('team_leader')): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/rbac_system/pages/team_leader/dashboard.php">Team Leader Dashboard</a>
+                            <a class="nav-link" href="/rbac_system/pages/team_leader/dashboard.php">
+                                <i class="fas fa-users-cog me-1"></i> Team Dashboard
+                            </a>
                         </li>
                         <?php endif; ?>
                         
-                        <?php if (hasRole('team_member')): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/rbac_system/pages/team_member/dashboard.php">Team Member Dashboard</a>
-                        </li>
-                        <?php endif; ?>
-                        
-                        <?php if (hasRole('client')): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/rbac_system/pages/client/dashboard.php">Client Dashboard</a>
-                        </li>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                </ul>
-                
-                <ul class="navbar-nav">
-                    <?php if (isLoggedIn()): ?>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <?php echo htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name']); ?>
+                                <?php 
+                                $currentUser = getCurrentUser();
+                                $profilePic = !empty($currentUser['profile_picture']) ? $currentUser['profile_picture'] : '/rbac_system/assets/img/default-avatar.png';
+                                ?>
+                                <img src="<?php echo $profilePic; ?>" alt="Profile" class="rounded-circle me-1" width="24" height="24">
+                                <?php echo htmlspecialchars($currentUser['first_name']); ?>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/rbac_system/users/profile.php">Profile</a></li>
+                                <li><a class="dropdown-item" href="/rbac_system/users/profile.php">
+                                    <i class="fas fa-user me-2"></i> My Profile
+                                </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/rbac_system/users/logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="/rbac_system/users/logout.php">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                </a></li>
                             </ul>
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/rbac_system/users/login.php">Login</a>
+                            <a class="nav-link" href="/rbac_system/users/login.php">
+                                <i class="fas fa-sign-in-alt me-1"></i> Login
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/rbac_system/users/register.php">Register</a>
+                            <a class="nav-link" href="/rbac_system/users/register.php">
+                                <i class="fas fa-user-plus me-1"></i> Register
+                            </a>
                         </li>
                     <?php endif; ?>
                 </ul>
@@ -108,22 +136,5 @@ $roleNames = array_map(function($role) {
         </div>
     </nav>
     
-    <div class="container mt-4">
-        <?php if (isset($_GET['error'])): ?>
-            <div class="alert alert-danger">
-                <?php
-                    $error = $_GET['error'];
-                    if ($error === 'unauthorized') {
-                        echo 'You do not have permission to access this page.';
-                    } else {
-                        echo htmlspecialchars($error);
-                    }
-                ?>
-            </div>
-        <?php endif; ?>
-        
-        <?php if (isset($_GET['success'])): ?>
-            <div class="alert alert-success">
-                <?php echo htmlspecialchars($_GET['success']); ?>
-            </div>
-        <?php endif; ?>
+    <div class="container py-4 fade-in">
+        <!-- Content will be here -->
