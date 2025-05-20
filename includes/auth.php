@@ -27,6 +27,30 @@ function getCurrentUser() {
     return null;
 }
 
+// Authenticate user with email and password
+function authenticateUser($email, $password) {
+    // Get user by email
+    $users = queryData('users', '*', ['email' => 'eq.' . $email]);
+    
+    if (!$users || count($users) === 0) {
+        return null;
+    }
+    
+    $user = $users[0];
+    
+    // Verify password
+    if (password_verify($password, $user['password'])) {
+        // Return user data in the expected format
+        return [
+            'user' => $user,
+            'access_token' => null,  // Not using tokens in this system
+            'refresh_token' => null  // Not using tokens in this system
+        ];
+    }
+    
+    return null;
+}
+
 // Get user roles
 function getUserRoles($userId = null) {
     if (!$userId) {

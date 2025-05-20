@@ -114,23 +114,6 @@ function deleteData($table, $filters = []) {
     return false;
 }
 
-// Function to authenticate user with Supabase
-function authenticateUser($email, $password) {
-    $endpoint = '/auth/v1/token?grant_type=password';
-    $data = [
-        'email' => $email,
-        'password' => $password
-    ];
-    
-    $response = supabaseRequest($endpoint, 'POST', $data, false);
-    
-    if ($response['status'] >= 200 && $response['status'] < 300 && isset($response['data']['access_token'])) {
-        return $response['data'];
-    }
-    
-    return null;
-}
-
 // Function to register user with Supabase
 function registerUser($email, $password, $userData = []) {
     $endpoint = '/auth/v1/signup';

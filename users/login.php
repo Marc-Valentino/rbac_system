@@ -19,10 +19,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $authData = authenticateUser($email, $password);
         
-        if ($authData && isset($authData['access_token']) && isset($authData['user']['id'])) {
+        if ($authData && isset($authData['user']['id'])) {
+            // Store user session data
             $_SESSION['user_id'] = $authData['user']['id'];
-            $_SESSION['access_token'] = $authData['access_token'];
-            $_SESSION['refresh_token'] = $authData['refresh_token'];
+            
+            // Check if access token exists before storing it
+            if (isset($authData['access_token'])) {
+                $_SESSION['access_token'] = $authData['access_token'];
+            }
+            
+            // Check if refresh token exists before storing it
+            if (isset($authData['refresh_token'])) {
+                $_SESSION['refresh_token'] = $authData['refresh_token'];
+            }
             
             header('Location: /rbac_system/index.php');
             exit;
