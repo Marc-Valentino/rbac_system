@@ -132,6 +132,20 @@ function getPriorityBadge($priority) {
     return '<span class="' . $priorityClass . '">' . $priorityLabel . '</span>';
 }
 
+// Get CSS class for priority badge
+function getPriorityClass($priority) {
+    switch ($priority) {
+        case 'high':
+            return 'bg-danger';
+        case 'medium':
+            return 'bg-warning';
+        case 'low':
+            return 'bg-info';
+        default:
+            return 'bg-secondary';
+    }
+}
+
 // Sanitize input
 function sanitizeInput($input) {
     if (is_array($input)) {
@@ -143,5 +157,11 @@ function sanitizeInput($input) {
     }
     
     return $input;
+}
+
+// Get project name by ID
+function getProjectName($projectId) {
+    $project = getProjectById($projectId);
+    return $project ? $project['name'] : 'Unknown Project';
 }
 ?>
