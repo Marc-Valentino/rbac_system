@@ -3,6 +3,9 @@
 $supabase_url = 'https://fzpfhxunqtlchajijmbs.supabase.co';
 $supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6cGZoeHVucXRsY2hhamlqbWJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NTEwNjUsImV4cCI6MjA2MzMyNzA2NX0.awfbvnM2gdAYYWxoTue9X6WB4b5C6tMlZlFeWSMbphc';
 
+// Include cache functions
+require_once __DIR__ . '/../includes/cache.php';
+
 // Function to make Supabase API requests
 function supabaseRequest($endpoint, $method = 'GET', $data = null, $auth = true) {
     global $supabase_url, $supabase_key;
@@ -45,6 +48,15 @@ function supabaseRequest($endpoint, $method = 'GET', $data = null, $auth = true)
 
 // Function to query data from Supabase
 function queryData($table, $select = '*', $filters = [], $order = null, $limit = null) {
+    // Generate a cache key based on the query parameters
+    $cacheKey = 'query_' . $table . '_' . $select . '_' . serialize($filters) . '_' . $order . '_' . $limit;
+    
+    // Try to get data from cache first
+    $cachedData = getCache($cacheKey);
+    if ($cachedData !== null) {
+        return $cachedData;
+    }
+    
     $endpoint = '/rest/v1/' . $table . '?select=' . urlencode($select);
     
     foreach ($filters as $key => $value) {
@@ -62,6 +74,8 @@ function queryData($table, $select = '*', $filters = [], $order = null, $limit =
     $response = supabaseRequest($endpoint);
     
     if ($response['status'] >= 200 && $response['status'] < 300) {
+        // Cache the result for future use
+        setCache($cacheKey, $response['data']);
         return $response['data'];
     }
     
@@ -74,6 +88,8 @@ function insertData($table, $data) {
     $response = supabaseRequest($endpoint, 'POST', $data);
     
     if ($response['status'] >= 200 && $response['status'] < 300) {
+        // Clear cache for this table
+        clearCache('query_' . $table . '_*');
         return $response['data'];
     }
     
@@ -91,6 +107,8 @@ function updateData($table, $data, $filters = []) {
     $response = supabaseRequest($endpoint, 'PATCH', $data);
     
     if ($response['status'] >= 200 && $response['status'] < 300) {
+        // Clear cache for this table
+        clearCache('query_' . $table . '_*');
         return $response['data'];
     }
     
@@ -108,6 +126,8 @@ function deleteData($table, $filters = []) {
     $response = supabaseRequest($endpoint, 'DELETE');
     
     if ($response['status'] >= 200 && $response['status'] < 300) {
+        // Clear cache for this table
+        clearCache('query_' . $table . '_*');
         return true;
     }
     

@@ -93,6 +93,10 @@ $roleNames = array_map(function($role) {
                                 <li><a class="dropdown-item" href="/rbac_system/pages/admin/manage_roles.php">
                                     <i class="fas fa-user-tag me-2 text-primary"></i> Manage Roles
                                 </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/rbac_system/admin/clear_cache.php">
+                                    <i class="fas fa-sync-alt me-2 text-primary"></i> Clear System Cache
+                                </a></li>
                             </ul>
                         </li>
                         <?php endif; ?>
@@ -135,9 +139,11 @@ $roleNames = array_map(function($role) {
                             <a class="nav-link dropdown-toggle rounded-pill px-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <?php 
                                 $currentUser = getCurrentUser();
-                                $profilePic = !empty($currentUser['profile_picture']) ? $currentUser['profile_picture'] : '/rbac_system/assets/img/default-avatar.png';
+                                $profileIcon = !empty($currentUser['profile_picture']) ? $currentUser['profile_picture'] : 'user-circle';
                                 ?>
-                                <img src="<?php echo $profilePic; ?>" alt="Profile" class="rounded-circle me-1 border" width="28" height="28">
+                                <div class="d-inline-flex justify-content-center align-items-center rounded-circle bg-light me-1" style="width: 28px; height: 28px;">
+                                    <i class="fas fa-<?php echo $profileIcon; ?>"></i>
+                                </div>
                                 <?php echo htmlspecialchars($currentUser['first_name']); ?>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow">

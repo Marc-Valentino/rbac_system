@@ -32,44 +32,61 @@ include_once __DIR__ . '/../../includes/header.php';
     
     <div class="row mt-4">
         <div class="col-md-3">
-            <div class="card text-white bg-primary mb-3">
-                <div class="card-header">Users</div>
-                <div class="card-body">
-                    <h5 class="card-title"><?php echo $userCount; ?></h5>
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Users</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h2 class="display-4 mb-0"><?php echo $userCount; ?></h2>
                     <p class="card-text">Total registered users</p>
-                    <a href="/rbac_system/pages/admin/manage_users.php" class="btn btn-light btn-sm">Manage Users</a>
+                    <div class="mt-auto">
+                        <a href="/rbac_system/pages/admin/manage_users.php" class="btn btn-primary btn-sm">Manage Users</a>
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="col-md-3">
-            <div class="card text-white bg-success mb-3">
-                <div class="card-header">Roles</div>
-                <div class="card-body">
-                    <h5 class="card-title"><?php echo $roleCount; ?></h5>
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Roles</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h2 class="display-4 mb-0"><?php echo $roleCount; ?></h2>
                     <p class="card-text">System roles</p>
-                    <a href="/rbac_system/pages/admin/manage_roles.php" class="btn btn-light btn-sm">Manage Roles</a>
+                    <div class="mt-auto">
+                        <a href="/rbac_system/pages/admin/manage_roles.php" class="btn btn-success btn-sm">Manage Roles</a>
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="col-md-3">
-            <div class="card text-white bg-info mb-3">
-                <div class="card-header">Projects</div>
-                <div class="card-body">
-                    <h5 class="card-title"><?php echo $projectStats['total']; ?></h5>
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Projects</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h2 class="display-4 mb-0"><?php echo $projectStats['total']; ?></h2>
                     <p class="card-text"><?php echo $projectStats['active']; ?> active, <?php echo $projectStats['completed']; ?> completed</p>
+                    <div class="mt-auto">
+                        <a href="/rbac_system/projects/index.php" class="btn btn-info btn-sm">Manage Projects</a>
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="col-md-3">
-            <div class="card text-white bg-warning mb-3">
-                <div class="card-header">Tasks</div>
-                <div class="card-body">
-                    <h5 class="card-title"><?php echo $taskStats['total']; ?></h5>
+            <div class="card h-100">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="card-title mb-0">Tasks</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h2 class="display-4 mb-0"><?php echo $taskStats['total']; ?></h2>
                     <p class="card-text"><?php echo $taskStats['pending']; ?> pending, <?php echo $taskStats['in_progress']; ?> in progress, <?php echo $taskStats['completed']; ?> completed</p>
-                    <a href="/rbac_system/tasks/index.php" class="btn btn-light btn-sm">View Tasks</a>
+                    <div class="mt-auto">
+                        <a href="/rbac_system/tasks/index.php" class="btn btn-warning btn-sm text-white">View Tasks</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -143,5 +160,36 @@ include_once __DIR__ . '/../../includes/header.php';
         </div>
     </div>
 </div>
-
 <?php include_once __DIR__ . '/../../includes/footer.php'; ?>
+
+
+<script>
+$(document).ready(function() {
+    // Fix modal glitching issues
+    $('.modal').on('shown.bs.modal', function() {
+        // Ensure modal has proper z-index
+        $(this).css('z-index', 1050);
+        // Prevent event propagation issues
+        $(this).find('.modal-content').on('mouseenter mouseleave', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    // Improve modal behavior for role assignment
+    $('#assignRoleModal').on('show.bs.modal', function (e) {
+        // Reset form fields when modal opens
+        $(this).find('form')[0].reset();
+        // Prevent modal from closing when clicking inside
+        $(this).find('.modal-content').on('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    // Ensure buttons work properly
+    $('.btn-assign-role').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Your existing role assignment logic
+    });
+});
+</script>
