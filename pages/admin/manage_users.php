@@ -68,6 +68,11 @@ include_once __DIR__ . '/../../includes/header.php';
 <div class="manage-users-container">
     <h2>Manage Users</h2>
     
+    <!-- Toast container for notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1070;">
+        <!-- Toasts will be inserted here dynamically -->
+    </div>
+    
     <?php if (!empty($error)): ?>
         <?php echo displayError($error); ?>
     <?php endif; ?>
@@ -104,7 +109,7 @@ include_once __DIR__ . '/../../includes/header.php';
                                 foreach ($userRoles as $role): 
                             ?>
                                 <span class="badge bg-primary me-1">
-                                    <?php echo htmlspecialchars($role['name']); ?>
+                                    <?php echo htmlspecialchars(ucfirst($role['name'])); ?>
                                     <form method="POST" class="d-inline remove-role-form">
                                         <input type="hidden" name="action" value="remove_role">
                                         <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
@@ -120,45 +125,9 @@ include_once __DIR__ . '/../../includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <!-- Replace the existing modal button with this -->
-                            <button type="button" class="btn btn-sm btn-primary assign-role-btn" data-user-id="<?php echo $user['id']; ?>">
+                            <button type="button" class="btn btn-sm btn-primary assign-role-btn" data-user-id="<?php echo $user['id']; ?>" data-user-name="<?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>">
                                 <i class="fas fa-user-tag"></i> Assign Role
                             </button>
-                            
-                            <!-- Add this at the bottom of your file, before the closing </div> -->
-                            <!-- Single Global Modal -->
-                            <div class="modal fade" id="globalRoleModal" tabindex="-1" aria-labelledby="globalRoleModalLabel" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="globalRoleModalLabel">Assign Role</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <form method="POST" id="globalRoleForm">
-                                                <input type="hidden" name="action" value="assign_role">
-                                                <input type="hidden" name="user_id" id="globalModalUserId" value="">
-                                                
-                                                <div class="mb-3">
-                                                    <label for="global_role_id" class="form-label">Select Role</label>
-                                                    <select class="form-select" id="global_role_id" name="role_id" required>
-                                                        <option value="">-- Select Role --</option>
-                                                        <?php foreach ($roles as $role): ?>
-                                                        <option value="<?php echo $role['id']; ?>">
-                                                            <?php echo htmlspecialchars($role['name']); ?> - <?php echo htmlspecialchars($role['description'] ?? ''); ?>
-                                                        </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                            </form>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" form="globalRoleForm" class="btn btn-primary">Assign Role</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -168,222 +137,101 @@ include_once __DIR__ . '/../../includes/header.php';
     </div>
 </div>
 
+<!-- Single Global Modal -->
+<div class="modal fade" id="globalRoleModal" tabindex="-1" aria-labelledby="globalRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="globalRoleModalLabel">Assign Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id="globalRoleForm">
+                    <input type="hidden" name="action" value="assign_role">
+                    <input type="hidden" name="user_id" id="globalModalUserId" value="">
+                    
+                    <div class="mb-3">
+                        <label for="global_role_id" class="form-label">Select Role</label>
+                        <select class="form-select" id="global_role_id" name="role_id" required>
+                            <option value="">-- Select Role --</option>
+                            <?php foreach ($roles as $role): ?>
+                            <option value="<?php echo $role['id']; ?>">
+                                <?php echo htmlspecialchars(ucfirst($role['name'])); ?> - <?php echo htmlspecialchars($role['description'] ? ucfirst($role['description']) : ''); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="globalRoleForm" class="btn btn-primary">Assign Role</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Confirm role removal
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toastContainer = document.querySelector('.toast-container');
+        const toastId = 'toast-' + Date.now();
+        const toastHTML = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        toast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            toastElement.remove();
+        });
+    }
+    
+    // Show toast for PHP messages on page load
+    <?php if (!empty($success)): ?>
+        showToast('<?php echo addslashes($success); ?>', 'success');
+    <?php endif; ?>
+    
+    <?php if (!empty($error)): ?>
+        showToast('<?php echo addslashes($error); ?>', 'danger');
+    <?php endif; ?>
+    
+    // Confirm role removal with toast notification
     const removeForms = document.querySelectorAll('.remove-role-form');
     removeForms.forEach(form => {
         form.addEventListener('submit', function(e) {
             if (!confirm('Are you sure you want to remove this role from the user?')) {
                 e.preventDefault();
+            } else {
+                // Form will submit normally and page will refresh with PHP-generated toast
             }
         });
     });
     
-    // Fix modal glitching issues
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-        // Ensure proper backdrop and keyboard behavior
-        modal.setAttribute('data-bs-backdrop', 'static');
-        
-        // Prevent event propagation issues
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            }
-        });
-        
-        // Fix content click propagation
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        }
-    });
-    
-    // Ensure only one modal is open at a time
-    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
-        button.addEventListener('click', function() {
-            // Close any open modals first
-            const openModals = document.querySelectorAll('.modal.show');
-            openModals.forEach(openModal => {
-                const modalInstance = bootstrap.Modal.getInstance(openModal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            });
-        });
-    });
-});
-</script>
-
-<style>
-/* Fix modal z-index and stacking issues */
-.modal {
-    z-index: 1050 !important;
-}
-.modal-backdrop {
-    z-index: 1040 !important;
-}
-/* Ensure modal content is clickable */
-.modal-content {
-    position: relative;
-    z-index: 1051 !important;
-}
-/* Prevent unwanted hover effects */
-.modal-dialog {
-    pointer-events: all !important;
-}
-</style>
-
-<?php include_once __DIR__ . '/../../includes/footer.php'; ?>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Confirm role removal
-    const removeForms = document.querySelectorAll('.remove-role-form');
-    removeForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            if (!confirm('Are you sure you want to remove this role from the user?')) {
-                e.preventDefault();
-            }
-        });
-    });
-    
-    // Complete modal reset approach
-    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Get the target modal ID
-            const targetModalId = this.getAttribute('data-bs-target');
-            const targetModal = document.querySelector(targetModalId);
-            
-            if (targetModal) {
-                // Destroy any existing modal instances first
-                const existingModal = bootstrap.Modal.getInstance(targetModal);
-                if (existingModal) {
-                    existingModal.dispose();
-                }
-                
-                // Create a fresh modal instance
-                const newModal = new bootstrap.Modal(targetModal, {
-                    backdrop: 'static',
-                    keyboard: false,
-                    focus: true
-                });
-                
-                // Show the modal
-                newModal.show();
-            }
-        });
-    });
-});
-</script>
-
-<style>
-/* Reset modal styles to defaults */
-.modal-backdrop {
-    opacity: 0.5 !important;
-}
-
-/* Ensure modals appear above everything */
-.modal {
-    z-index: 1055 !important;
-}
-
-/* Fix pointer events */
-.modal-dialog {
-    margin: 1.75rem auto;
-    max-width: 500px;
-    pointer-events: auto !important;
-}
-
-/* Ensure content is clickable */
-.modal-content {
-    position: relative;
-    pointer-events: auto !important;
-    background-color: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 0.3rem;
-    outline: 0;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-}
-
-/* Fix button hover states */
-.modal .btn:hover {
-    opacity: 0.85;
-}
-</style>
-
-<?php include_once __DIR__ . '/../../includes/footer.php'; ?>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Confirm role removal
-    const removeForms = document.querySelectorAll('.remove-role-form');
-    removeForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            if (!confirm('Are you sure you want to remove this role from the user?')) {
-                e.preventDefault();
-            }
-        });
-    });
-    
-    // Fix modal glitching issues
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-        // Ensure proper backdrop and keyboard behavior
-        modal.setAttribute('data-bs-backdrop', 'static');
-        
-        // Prevent event propagation issues
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            }
-        });
-        
-        // Fix content click propagation
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        }
-    });
-    
-    // Ensure only one modal is open at a time
-    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
-        button.addEventListener('click', function() {
-            // Close any open modals first
-            const openModals = document.querySelectorAll('.modal.show');
-            openModals.forEach(openModal => {
-                const modalInstance = bootstrap.Modal.getInstance(openModal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            });
-        });
-    });
-    
-    // Use a single global modal instead of multiple modals
+    // Initialize the modal properly
     const globalModal = new bootstrap.Modal(document.getElementById('globalRoleModal'), {
-        backdrop: 'static',
-        keyboard: false
+        backdrop: true,
+        keyboard: true,
+        focus: true
     });
     
     // Assign role button click handler
     document.querySelectorAll('.assign-role-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userId = this.getAttribute('data-user-id');
-            const userName = this.closest('tr').querySelector('td:nth-child(2)').textContent.trim();
+            const userName = this.getAttribute('data-user-name');
             
             // Update modal title and user ID
             document.getElementById('globalRoleModalLabel').textContent = 'Assign Role to ' + userName;
@@ -396,5 +244,89 @@ document.addEventListener('DOMContentLoaded', function() {
             globalModal.show();
         });
     });
+    
+    // Form submission with validation and improved feedback
+    document.getElementById('globalRoleForm').addEventListener('submit', function(e) {
+        const roleSelect = document.getElementById('global_role_id');
+        
+        if (!roleSelect.value) {
+            e.preventDefault();
+            showToast('Please select a role to assign', 'warning');
+            return;
+        }
+        
+        // Add loading state to button
+        const submitButton = document.querySelector('button[form="globalRoleForm"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Assigning...';
+        submitButton.disabled = true;
+        
+        // Form will submit normally and page will refresh with PHP-generated toast
+        // This is just to provide immediate feedback to the user
+        setTimeout(() => {
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        }, 2000); // Reset after 2 seconds in case the form submission takes longer
+    });
 });
 </script>
+
+<style>
+/* Fix modal styles */
+.modal-backdrop {
+    opacity: 0.5 !important;
+    z-index: 1040 !important;
+}
+
+.modal {
+    z-index: 1050 !important;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+}
+
+.modal-content {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    pointer-events: auto !important;
+}
+
+/* Toast styles */
+.toast-container {
+    z-index: 1070 !important;
+}
+
+.toast {
+    opacity: 1 !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Improved select styling */
+.form-select {
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--gray-300);
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .toast-container {
+        max-width: 90%;
+        padding: 0.5rem !important;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+}
+</style>
+
+<?php include_once __DIR__ . '/../../includes/footer.php'; ?>
