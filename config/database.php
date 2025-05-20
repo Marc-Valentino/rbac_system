@@ -144,13 +144,48 @@ function registerUser($email, $password, $userData = []) {
     
     $response = supabaseRequest($endpoint, 'POST', $data, false);
     
+    // Debug the response
+    error_log('Supabase registration response: ' . json_encode($response));
+    
     if ($response['status'] >= 200 && $response['status'] < 300 && isset($response['data']['id'])) {
         // Insert additional user data
         if (!empty($userData)) {
             $userData['id'] = $response['data']['id'];
-            insertData('users', $userData);
+            // Ensure email and password are stored in users table
+            $userData['email'] = $email;
+            $userData['password'] = password_hash($password, PASSWORD_DEFAULT);
+            
+            $insertResult = insertData('users', $userData);
+            
+            // Check if the insert was successful
+            if ($insertResult === null) {
+                error_log('Failed to insert user data into users table: ' . json_encode($userData));
+                return null;
+            }
+        } else {
+            // If no additional data provided, still need to create user record
+            $basicUserData = [
+                'id' => $response['data']['id'],
+                'email' => $email,
+                'password' => password_hash($password, PASSWORD_DEFAULT)
+            ];
+            $insertResult = insertData('users', $basicUserData);
+            
+            if ($insertResult === null) {
+                error_log('Failed to insert basic user data into users table');
+                return null;
+            }
         }
         return $response['data'];
+    } else {
+        // Check for specific error messages from Supabase
+        if (isset($response['data']['error'])) {
+            error_log('Supabase registration error: ' . $response['data']['error']);
+            return ['error' => $response['data']['error']];
+        } else {
+            error_log('Supabase registration failed: ' . json_encode($response));
+            return ['error' => 'registration_failed'];
+        }
     }
     
     return null;
