@@ -45,12 +45,30 @@ function getRoleById($roleId) {
 
 // Assign role to user
 function assignRoleToUser($userId, $roleId) {
+    // Validate inputs
+    if (empty($userId) || empty($roleId)) {
+        error_log("Invalid user_id or role_id: user_id={$userId}, role_id={$roleId}");
+        return null;
+    }
+    
     $data = [
         'user_id' => $userId,
         'role_id' => $roleId
     ];
     
-    return insertData('user_roles', $data);
+    // Log the data being sent
+    error_log("Assigning role: " . json_encode($data));
+    
+    $result = insertData('user_roles', $data);
+    
+    // Log the result
+    if ($result === null) {
+        error_log("Role assignment failed for user {$userId} and role {$roleId}");
+    } else {
+        error_log("Role assignment succeeded for user {$userId} and role {$roleId}");
+    }
+    
+    return $result;
 }
 
 // Remove role from user

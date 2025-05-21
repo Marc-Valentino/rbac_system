@@ -13,11 +13,12 @@ $error = '';
 $success = '';
 
 // Handle role assignment
+// Handle role assignment
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'assign_role') {
-    $userId = intval($_POST['user_id'] ?? 0);
+    $userId = $_POST['user_id'] ?? '';
     $roleId = intval($_POST['role_id'] ?? 0);
     
-    if ($userId <= 0 || $roleId <= 0) {
+    if (empty($userId) || $roleId <= 0) {
         $error = 'Invalid user or role ID.';
     } else {
         // Check if user already has this role
@@ -44,10 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // Handle role removal
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'remove_role') {
-    $userId = intval($_POST['user_id'] ?? 0);
+    $userId = $_POST['user_id'] ?? '';
     $roleId = intval($_POST['role_id'] ?? 0);
     
-    if ($userId <= 0 || $roleId <= 0) {
+    if (empty($userId) || $roleId <= 0) {
         $error = 'Invalid user or role ID.';
     } else {
         $result = removeRoleFromUser($userId, $roleId);
@@ -245,12 +246,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Form submission with validation and improved feedback
+    // Form submission with AJAX and improved feedback
     document.getElementById('globalRoleForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
         const roleSelect = document.getElementById('global_role_id');
         
         if (!roleSelect.value) {
-            e.preventDefault();
             showToast('Please select a role to assign', 'warning');
             return;
         }
@@ -261,12 +263,88 @@ document.addEventListener('DOMContentLoaded', function() {
         submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Assigning...';
         submitButton.disabled = true;
         
-        // Form will submit normally and page will refresh with PHP-generated toast
-        // This is just to provide immediate feedback to the user
-        setTimeout(() => {
+        // Get form data
+        const formData = new FormData(this);
+        
+        // Send AJAX request
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        })
+        // Inside the fetch .then() handler
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.text();
+        })
+        .then(html => {
+            console.log('Response HTML length:', html.length);
+            // Parse the response to check for success or error messages
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Check if there's a success message in the response
+            const successAlert = doc.querySelector('.alert-success');
+            if (successAlert) {
+                showToast(successAlert.textContent.trim(), 'success');
+                
+                // Update the user's roles in the table without refreshing
+                const userId = document.getElementById('globalModalUserId').value;
+                const roleId = roleSelect.value;
+                const roleName = roleSelect.options[roleSelect.selectedIndex].text.split(' - ')[0];
+                
+                // Find the user's row
+                const userRow = document.querySelector(`button[data-user-id="${userId}"]`).closest('tr');
+                const rolesCell = userRow.querySelector('td:nth-child(4)');
+                
+                // Check if user has no roles
+                if (rolesCell.querySelector('em')) {
+                    rolesCell.innerHTML = '';
+                }
+                
+                // Create new role badge
+                const badgeHTML = `
+                    <span class="badge bg-primary me-1">
+                        ${roleName}
+                        <form method="POST" class="d-inline remove-role-form">
+                            <input type="hidden" name="action" value="remove_role">
+                            <input type="hidden" name="user_id" value="${userId}">
+                            <input type="hidden" name="role_id" value="${roleId}">
+                            <button type="submit" class="btn-close btn-close-white ms-1" aria-label="Remove role"></button>
+                        </form>
+                    </span>
+                `;
+                
+                rolesCell.insertAdjacentHTML('beforeend', badgeHTML);
+                
+                // Add event listener to the new remove button
+                const newRemoveForm = rolesCell.querySelector('.remove-role-form:last-child');
+                newRemoveForm.addEventListener('submit', function(e) {
+                    if (!confirm('Are you sure you want to remove this role from the user?')) {
+                        e.preventDefault();
+                    }
+                });
+                
+                // Close the modal
+                globalModal.hide();
+            } else {
+                // Check for error message
+                const errorAlert = doc.querySelector('.alert-danger');
+                if (errorAlert) {
+                    showToast(errorAlert.textContent.trim(), 'danger');
+                } else {
+                    showToast('Failed to assign role. Please try again.', 'danger');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred. Please try again.', 'danger');
+        })
+        .finally(() => {
+            // Reset button state
             submitButton.innerHTML = originalText;
             submitButton.disabled = false;
-        }, 2000); // Reset after 2 seconds in case the form submission takes longer
+        });
     });
 });
 </script>

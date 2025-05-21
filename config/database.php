@@ -38,6 +38,16 @@ function supabaseRequest($endpoint, $method = 'GET', $data = null, $auth = true)
     
     $response = curl_exec($ch);
     $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    // Add error logging
+    if ($status_code >= 400) {
+        error_log("Supabase API Error: " . $status_code . " - " . $response);
+        error_log("Request: " . $method . " " . $url);
+        if ($data) {
+            error_log("Data: " . json_encode($data));
+        }
+    }
+    
     curl_close($ch);
     
     return [
@@ -91,9 +101,11 @@ function insertData($table, $data) {
         // Clear cache for this table
         clearCache('query_' . $table . '_*');
         return $response['data'];
+    } else {
+        // Log the error details
+        error_log("Insert data failed for table {$table}: " . json_encode($response));
+        return null;
     }
-    
-    return null;
 }
 
 // Function to update data in Supabase

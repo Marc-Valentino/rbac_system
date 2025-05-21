@@ -1,0 +1,1 @@
+a:1:{i:0;a:1:{s:10:"user_roles";a:1:{i:0;a:3:{s:2:"id";i:7;s:5:"roles";a:3:{s:2:"id";i:5;s:4:"name";s:6:"client";s:11:"description";s:46:"Can view project progress and provide feedback";}s:7:"role_id";i:5;}}}}
