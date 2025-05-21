@@ -66,6 +66,9 @@ function assignRoleToUser($userId, $roleId) {
         error_log("Role assignment failed for user {$userId} and role {$roleId}");
     } else {
         error_log("Role assignment succeeded for user {$userId} and role {$roleId}");
+        
+        // Clear the user roles cache immediately
+        clearCache('user_roles_' . $userId); // Fix the typo here (was missing underscore)
     }
     
     return $result;
@@ -73,12 +76,36 @@ function assignRoleToUser($userId, $roleId) {
 
 // Remove role from user
 function removeRoleFromUser($userId, $roleId) {
+    // Validate inputs
+    if (empty($userId) || empty($roleId)) {
+        error_log("Invalid user_id or role_id for removal: user_id={$userId}, role_id={$roleId}");
+        return null;
+    }
+    
     $filters = [
         'user_id' => 'eq.' . $userId,
         'role_id' => 'eq.' . $roleId
     ];
     
-    return deleteData('user_roles', $filters);
+    // Log the data being sent for removal
+    error_log("Removing role with filters: " . json_encode($filters));
+    
+    $result = deleteData('user_roles', $filters);
+    
+    // Log the result for debugging
+    if ($result) {
+        error_log("Role removal succeeded for user {$userId} and role {$roleId}");
+        
+        // Clear ALL related caches to ensure UI consistency
+        clearCache('user_roles_' . $userId);
+        clearCache('query_user_roles_*');
+        clearCache('query_users_*');
+        clearAllCache(); // Force a complete cache refresh
+    } else {
+        error_log("Role removal failed for user {$userId} and role {$roleId}");
+    }
+    
+    return $result;
 }
 
 // Get all projects

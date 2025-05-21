@@ -209,24 +209,83 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast('<?php echo addslashes($error); ?>', 'danger');
     <?php endif; ?>
     
-    // Confirm role removal with toast notification
+    // Replace the existing role removal code with this improved implementation
+    function attachRemoveRoleListeners(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            if (!confirm('Are you sure you want to remove this role from the user?')) {
+                return;
+            }
+            
+            // Get form data
+            const formData = new FormData(this);
+            const userId = this.querySelector('input[name="user_id"]').value;
+            const roleId = this.querySelector('input[name="role_id"]').value;
+            const roleElement = this.closest('.badge');
+            const rolesCell = roleElement.parentElement;
+            
+            // Add loading state
+            roleElement.classList.add('opacity-50');
+            const removeBtn = this.querySelector('button');
+            removeBtn.disabled = true;
+            
+            // Send AJAX request
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(html => {
+                // Always remove the role from UI immediately
+                roleElement.remove();
+                
+                // Check if this was the last role and update UI accordingly
+                if (!rolesCell.querySelector('.badge')) {
+                    rolesCell.innerHTML = '<em>No roles assigned</em>';
+                }
+                
+                // Show success message
+                showToast('Role removed successfully!', 'success');
+                
+                // Force reload the page after a short delay to ensure UI is in sync with database
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred. Please try again.', 'danger');
+                
+                // Reset loading state
+                roleElement.classList.remove('opacity-50');
+                removeBtn.disabled = false;
+            });
+        });
+    }
+    
+    // Attach event listeners to all existing remove role forms
     const removeForms = document.querySelectorAll('.remove-role-form');
     removeForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            if (!confirm('Are you sure you want to remove this role from the user?')) {
-                e.preventDefault();
-            } else {
-                // Form will submit normally and page will refresh with PHP-generated toast
-            }
-        });
+        attachRemoveRoleListeners(form);
     });
     
     // Initialize the modal properly
-    const globalModal = new bootstrap.Modal(document.getElementById('globalRoleModal'), {
-        backdrop: true,
-        keyboard: true,
-        focus: true
-    });
+    const globalRoleModal = document.getElementById('globalRoleModal');
+    let modal;
+    
+    if (globalRoleModal) {
+        try {
+            modal = new bootstrap.Modal(globalRoleModal);
+        } catch (error) {
+            console.error('Error initializing modal:', error);
+        }
+    }
     
     // Assign role button click handler
     document.querySelectorAll('.assign-role-btn').forEach(button => {
@@ -242,7 +301,12 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('globalRoleForm').reset();
             
             // Show modal
-            globalModal.show();
+            if (modal) {
+                modal.show();
+            } else {
+                // Fallback if modal initialization failed
+                $('#globalRoleModal').modal('show');
+            }
         });
     });
     
@@ -271,69 +335,46 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        // Inside the fetch .then() handler
         .then(response => {
-            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
             return response.text();
         })
         .then(html => {
-            console.log('Response HTML length:', html.length);
             // Parse the response to check for success or error messages
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
             // Check if there's a success message in the response
             const successAlert = doc.querySelector('.alert-success');
-            if (successAlert) {
-                showToast(successAlert.textContent.trim(), 'success');
+            
+            // Also check if the role was actually removed by looking at the updated HTML
+            const userRowInResponse = doc.querySelector(`button[data-user-id="${userId}"]`)?.closest('tr');
+            const roleStillExists = userRowInResponse?.querySelector(`input[name="role_id"][value="${roleId}"]`);
+            
+            if (successAlert || !roleStillExists) {
+                showToast(successAlert ? successAlert.textContent.trim() : 'Role removed successfully!', 'success');
                 
-                // Update the user's roles in the table without refreshing
-                const userId = document.getElementById('globalModalUserId').value;
-                const roleId = roleSelect.value;
-                const roleName = roleSelect.options[roleSelect.selectedIndex].text.split(' - ')[0];
+                // Remove the role badge from the UI
+                roleElement.remove();
                 
-                // Find the user's row
-                const userRow = document.querySelector(`button[data-user-id="${userId}"]`).closest('tr');
-                const rolesCell = userRow.querySelector('td:nth-child(4)');
-                
-                // Check if user has no roles
-                if (rolesCell.querySelector('em')) {
-                    rolesCell.innerHTML = '';
+                // Check if this was the last role and update UI accordingly
+                if (!rolesCell.querySelector('.badge')) {
+                    rolesCell.innerHTML = '<em>No roles assigned</em>';
                 }
-                
-                // Create new role badge
-                const badgeHTML = `
-                    <span class="badge bg-primary me-1">
-                        ${roleName}
-                        <form method="POST" class="d-inline remove-role-form">
-                            <input type="hidden" name="action" value="remove_role">
-                            <input type="hidden" name="user_id" value="${userId}">
-                            <input type="hidden" name="role_id" value="${roleId}">
-                            <button type="submit" class="btn-close btn-close-white ms-1" aria-label="Remove role"></button>
-                        </form>
-                    </span>
-                `;
-                
-                rolesCell.insertAdjacentHTML('beforeend', badgeHTML);
-                
-                // Add event listener to the new remove button
-                const newRemoveForm = rolesCell.querySelector('.remove-role-form:last-child');
-                newRemoveForm.addEventListener('submit', function(e) {
-                    if (!confirm('Are you sure you want to remove this role from the user?')) {
-                        e.preventDefault();
-                    }
-                });
-                
-                // Close the modal
-                globalModal.hide();
             } else {
                 // Check for error message
                 const errorAlert = doc.querySelector('.alert-danger');
                 if (errorAlert) {
                     showToast(errorAlert.textContent.trim(), 'danger');
                 } else {
-                    showToast('Failed to assign role. Please try again.', 'danger');
+                    showToast('Failed to remove role. Please try again.', 'danger');
                 }
+                
+                // Reset loading state
+                roleElement.classList.remove('opacity-50');
+                removeBtn.disabled = false;
             }
         })
         .catch(error => {
